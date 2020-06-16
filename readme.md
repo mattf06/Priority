@@ -4,13 +4,13 @@ This service is used to adjust the process priorities according your settings.
 Even if the process is started with Normal priority, if you define it as low priority, 
 Priority automatically change it priority as you want.
 
-## How to install:
+## How to install
 
 1. copy priority.exe and priority.ini into your system folder (e.g. c:\windows)
 2. execute 'priority -install' (now the priority service is installed)
 3. execute 'priority -start'
 
-##How to configure
+## How to configure
 
 edit priority with your favorite editor (e.g. notepad)
 and add:

@@ -2,8 +2,13 @@
 //
 //////////////////////////////////////////////////////////////////////
 
-#include "ProcessList.h"
+#include <windows.h>
 #include <stdio.h>
+
+#include "ProcessList.h"
+#include <tchar.h>
+#include <atlstr.h>
+
 //////////////////////////////////////////////////////////////////////
 // Construction/Destruction
 //////////////////////////////////////////////////////////////////////
@@ -21,25 +26,20 @@ CProcessList::~CProcessList()
 
 BOOL CProcessList::OnProcess(LPCTSTR lpszFileName, DWORD ProcessID)
 {
-	char szBuffer[256];
+	WCHAR szBuffer[1024] = L"";
 
 	if (ProcessID < 10)
 		return TRUE;
 
-	/*
-	CProcessList pl(ProcessID);
-	pl.EnumProcessModules(ProcessID);
 
-	if (!lstrlen(pl.GetExeName()))
-		return TRUE;
+	WCHAR lpszWorkingDir[MAX_PATH];
+	GetCurrentDirectory(sizeof(lpszWorkingDir), lpszWorkingDir);
 
-	*/
-
-	TCHAR lpszModuleName[MAX_PATH];
+	WCHAR lpszModuleName[MAX_PATH];
 
 	lstrcpy(lpszModuleName, lpszFileName);
 
-	LPSTR lpszPtr = lpszModuleName + lstrlen(lpszModuleName) - 1;
+	LPWSTR lpszPtr = lpszModuleName + lstrlen(lpszModuleName) - 1;
 	while ((lpszPtr != lpszModuleName) && (*lpszPtr != '.'))
 	{
 		*lpszPtr = 0;
@@ -49,46 +49,57 @@ BOOL CProcessList::OnProcess(LPCTSTR lpszFileName, DWORD ProcessID)
 	if (*lpszPtr == '.')
 		*lpszPtr = 0;
 
-	char * ptr = strrchr(lpszModuleName, '\\');
-	if (ptr != NULL)
-		strncpy_s(lpszModuleName,ptr+1, MAX_PATH);
+	WCHAR * ptr = wcsrchr(lpszModuleName, '\\');
+	if (ptr != NULL) {
+		wcscpy_s(lpszModuleName, MAX_PATH, ptr + 1);
+	}
 
+	CString dir(lpszWorkingDir);
+
+	dir += L"\\priority.ini";
 
 #ifdef _DEBUG
-	printf("%u > %s : %s\n", ProcessID, lpszFileName, lpszModuleName);
+	//_tprintf(TEXT("PID=%u > Filename = %s | ModuleName = %s\n"), ProcessID, LPCWSTR(lpszFileName), LPCWSTR(lpszModuleName));
+	_tprintf(TEXT("INI File: %s\n"), LPCWSTR(dir));
 #endif
 
-	GetPrivateProfileString(lpszModuleName, "PRIORITY", "ERROR", szBuffer, sizeof(szBuffer), "priority.ini");
-	if (_strnicmp(szBuffer, "NORMAL", 6) == 0)
+	GetPrivateProfileString(lpszModuleName, L"priority", L"", szBuffer, sizeof(szBuffer), dir);
+#ifdef _DEBUG
+	if (lstrlen(szBuffer) > 0)
+	{
+		_tprintf(TEXT("PID=%u > Process: %s | New priority: %s\n"), ProcessID, LPCWSTR(lpszModuleName), LPCWSTR(szBuffer));
+	}
+#endif
+	if (_wcsnicmp(szBuffer, L"NORMAL", 6) == 0)
 	{
 		SetPriority(ProcessID, NORMAL_PRIORITY_CLASS);
 	}
-	else if (_strnicmp(szBuffer, "BELOW", 5) == 0)
+	else if (_wcsnicmp(szBuffer, L"BELOW", 5) == 0)
 	{
 		SetPriority(ProcessID, BELOW_NORMAL_PRIORITY_CLASS);
 	}
-	else if (_strnicmp(szBuffer, "LOW", 3) == 0)
+	else if (_wcsnicmp(szBuffer, L"LOW", 3) == 0)
 	{
 		SetPriority(ProcessID, IDLE_PRIORITY_CLASS);
 	}
-	else if (_strnicmp(szBuffer, "ABOVE", 5) == 0)
+	else if (_wcsnicmp(szBuffer, L"ABOVE", 5) == 0)
 	{
 		SetPriority(ProcessID, ABOVE_NORMAL_PRIORITY_CLASS);
 	}
-	else if (_strnicmp(szBuffer, "HIGH", 4) == 0)
+	else if (_wcsnicmp(szBuffer, L"HIGH", 4) == 0)
 	{
 		SetPriority(ProcessID, HIGH_PRIORITY_CLASS);
 	}
-	else if (_strnicmp(szBuffer, "REALTIME", 8) == 0)
+	else if (_wcsnicmp(szBuffer, L"REALTIME", 8) == 0)
 	{
 		SetPriority(ProcessID, REALTIME_PRIORITY_CLASS);
 	}
-	else if (_strnicmp(szBuffer, "OFF", 3) == 0)
+	else if (_wcsnicmp(szBuffer, L"OFF", 3) == 0)
 	{
-		HANDLE hProcess = OpenProcess(SYNCHRONIZE|PROCESS_TERMINATE, FALSE, ProcessID);
+		HANDLE hProcess = OpenProcess(SYNCHRONIZE | PROCESS_TERMINATE, FALSE, ProcessID);
 		if (hProcess != NULL)
 		{
-			TerminateProcess(hProcess, 0); 
+			TerminateProcess(hProcess, 0);
 			CloseHandle(hProcess);
 		}
 	}
@@ -98,19 +109,37 @@ BOOL CProcessList::OnProcess(LPCTSTR lpszFileName, DWORD ProcessID)
 
 void CProcessList::SetPriority(DWORD dwID, DWORD dwPriority)
 {
-	HANDLE hProcess = OpenProcess(PROCESS_SET_INFORMATION,FALSE, dwID);
+	HANDLE hProcess = OpenProcess(PROCESS_SET_INFORMATION, FALSE, dwID);
 
 	if (hProcess)
 	{
-		SetPriorityClass(hProcess, dwPriority);		
+#ifdef _DEBUG
+		_tprintf(TEXT("PID=%u > set priority to %u\n"), dwID, dwPriority);
+#endif
+		BOOL bRet = SetPriorityClass(hProcess, dwPriority);
+
+#ifdef _DEBUG
+		if (!bRet) {
+			_tprintf(TEXT("/!\\ Can't adjust priority, LastError: %u\n"), GetLastError());
+		}
+#endif
+
+
 		CloseHandle(hProcess);
+	}
+	else
+	{
+#ifdef _DEBUG
+		_tprintf(TEXT("Can't OpenProcess PID=%u, LastError = %u\n"), dwID, GetLastError());
+#endif
+
 	}
 }
 
-BOOL CProcessList::OnModule(HMODULE hModule, LPCTSTR lpszModuleName, LPCTSTR lpszPathName)
+BOOL CProcessList::OnModule(HMODULE hModule, LPCWSTR lpszModuleName, LPCWSTR lpszPathName)
 {
 	if (hModule)
 		lstrcpy(m_szExeName, lpszPathName);
-		
+
 	return FALSE;
 }

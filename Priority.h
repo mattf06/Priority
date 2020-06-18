@@ -10,16 +10,16 @@
 
 
 
-class CPriority : public CNTService {
-	public:	// construction
-		CPriority();
+class CPriorityService : public CNTService {
+public:	// construction
+	CPriorityService();
 
-	public:	// overridables
-		virtual void	Run(DWORD, LPTSTR *);
-		virtual void	Stop();
+public:	// overridables
+	virtual void	Run(DWORD, LPTSTR *);
+	virtual void	Stop();
 
-	private:
-		HANDLE	m_hStop;
+private:
+	HANDLE	m_hStop;
 protected:
 	static BOOL WINAPI ControlHandle(DWORD CtrlType);
 	static DWORD m_dwGuiThreadId;

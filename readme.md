@@ -7,7 +7,7 @@ Priority automatically change it priority as you want.
 ## How to install
 
 1. copy priority.exe into your system folder (e.g. c:\windows)
-2. copy priority.ini into your system32 folder (e.g. c:\windows\system32)
+2. copy priority.ini into your **system32** folder (e.g. **c:\windows\system32**)
 2. execute 'priority -i' from an Administror Command Line, to install it as service
 3. execute 'priority -s' to start it
 

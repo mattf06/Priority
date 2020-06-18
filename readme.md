@@ -12,12 +12,14 @@ Priority automatically change it priority as you want.
 
 ## How to configure
 
-edit priority with your favorite editor (e.g. notepad)
+edit priority.ini with your favorite editor (e.g. notepad)
 and add:
 ```
 [application name without extension]
 priority=low/below/normal/above/high or off to kill it
 ```
+
+priority.ini must be location under **Windows\system32**
 
 **NOTE:**
 Works on:

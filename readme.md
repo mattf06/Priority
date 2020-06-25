@@ -1,6 +1,6 @@
 # Priority service (64 Bits)
 
-This service is used to adjust the process priorities according your settings.
+This service is used to adjust the processes priority according your settings.
 Even if the process is started with Normal priority, if you define it as low priority, 
 Priority automatically change it priority as you want.
 
